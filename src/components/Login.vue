@@ -4,16 +4,16 @@
             <div class="avatar_box">
                 <img src="../assets/logo.png" alt="">
             </div>
-            <el-form class="login_form">
-                <el-form-item>
-                    <el-input prefix-icon="iconfont icon-user"></el-input>
+            <el-form class="login_form" :model="loginForm" :rules="loginFormRules" ref="loginFormRef">
+                <el-form-item prop="username">
+                    <el-input v-model="loginForm.username" prefix-icon="iconfont icon-user"></el-input>
                 </el-form-item>
-                <el-form-item>
-                    <el-input prefix-icon="iconfont icon-3702mima"></el-input>
+                <el-form-item prop="password">
+                    <el-input type="password" v-model="loginForm.password" prefix-icon="iconfont icon-3702mima"></el-input>
                 </el-form-item>
                 <el-form-item class="btns">
-                    <el-button type="primary">登录</el-button>
-                    <el-button type="info">重置</el-button>
+                    <el-button type="primary" @click="login">登录</el-button>
+                    <el-button type="info" @click="resetLoginForm">重置</el-button>
                 </el-form-item>
             </el-form>
         </div>
@@ -22,7 +22,52 @@
 
 <script>
     export default {
-        name: "Login"
+        name: "Login",
+        data(){
+            return{
+                //这是登录表单的数据绑定对象
+                loginForm:{
+                    username:'admin',
+                    password:'123456'
+                },
+                //这是表单的规则验证对象
+                loginFormRules:{
+                    username:[
+                        {required:true,message:'请输入用户名',trigger:'blur'},
+                        { min: 3, max: 10, message: '长度在 3 到 10 个字符', trigger: 'blur' }
+                    ],
+                    password:[
+                        {required:true,message:'请输入密码',trigger:'blur'},
+                        { min: 6, max: 15, message: '长度在 6 到 15 个字符', trigger: 'blur' }
+
+                    ]
+                }
+            }
+        },
+        methods:{
+            resetLoginForm(){
+                console.log(this)
+                this.$refs.loginFormRef.resetFields();
+            },
+            //一个表单的预验证，通过valid为true，否则为false
+            login(){
+                this.$refs.loginFormRef.validate(async valid=>{
+                    console.log(valid)
+                    if(!valid) return;
+                    const {data:res}=await this.$http.post('login',this.loginForm)
+                    if(res.meta.status!==200) return this.$message.error('登录失败')
+                    this.$message.success('登录成功')
+                    //1. 将登陆成功之后的token保存到客户端的sessionStorage中
+                    //  1.1 项目中除了登录之外的其他api接口，必须在登陆之后才能访问
+                    //  1.2 token只应当在当前网站打开期间生效，所以将token保存在sessionStorage中
+                    console.log(res)
+                    window.sessionStorage.setItem('token',res.data.token);
+                    //2. 通过编程式导航跳转到后台主页，路由地址是'/home'
+                    this.$router.push('/home')
+
+                })
+            }
+        }
     }
 </script>
 
