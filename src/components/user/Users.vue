@@ -231,10 +231,11 @@
           const { data: res } = await this.$http.post("users", this.addForm)
           if (res.meta.status !== 201) {
             this.$message.error("添加用户失败!")
+          }else{
+              this.$message.success("添加用户成功!")
+              this.addDialogVisible = false
+              this.getUserList()
           }
-          this.$message.success("添加用户成功!")
-          this.addDialogVisible = false
-          this.getUserList()
         })
       },
       //修改

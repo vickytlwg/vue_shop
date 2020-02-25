@@ -9,7 +9,6 @@
         <el-card class="box-card">
             <div slot="header" class="clearfix">
                 <span>权限列表</span>
-                <el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
             </div>
             <el-table border stripe
                       :data="rightsList"
@@ -28,9 +27,9 @@
                         prop="level"
                         label="权限等级">
                     <template slot-scope="scope">
-                        <el-tag>一级</el-tag>
-                        <el-tag>二级</el-tag>
-                        <el-tag>三级</el-tag>
+                        <el-tag v-if="scope.row.level==='0'">一级</el-tag>
+                        <el-tag v-else-if="scope.row.level==='1'" type="success">二级</el-tag>
+                        <el-tag v-else="scope.row.level==='2'" type="warning">三级</el-tag>
                     </template>
                 </el-table-column>
 
@@ -41,28 +40,28 @@
 </template>
 
 <script>
-  export default {
-    name: "Rights",
-    data() {
-      return {
-        rightsList: []
-      }
-    },
-    created() {
-      this.getRightList()
-    },
-    methods: {
-      async getRightList() {
-        const { data: res } = await this.$http.get("rights/list")
-        console.log(res)
-        if (res.meta.status === 200) {
-          this.rightsList = res.data
-        } else {
-          this.$message.error("获取权限列表失败!")
+    export default {
+        name: "Rights",
+        data() {
+            return {
+                rightsList: []
+            }
+        },
+        created() {
+            this.getRightList()
+        },
+        methods: {
+            async getRightList() {
+                const {data: res} = await this.$http.get("rights/list")
+                console.log(res)
+                if (res.meta.status === 200) {
+                    this.rightsList = res.data
+                } else {
+                    this.$message.error("获取权限列表失败!")
+                }
+            }
         }
-      }
     }
-  }
 </script>
 
 <style scoped>
