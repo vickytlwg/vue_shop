@@ -47,13 +47,11 @@
     },
     methods: {
       resetLoginForm() {
-        console.log(this)
         this.$refs.loginFormRef.resetFields()
       },
       //一个表单的预验证，通过valid为true，否则为false
       login() {
         this.$refs.loginFormRef.validate(async valid => {
-          console.log(valid)
           if (!valid) return
           const { data: res } = await this.$http.post("login", this.loginForm)
           if (res.meta.status !== 200) return this.$message.error("登录失败")
@@ -61,7 +59,6 @@
           //1. 将登陆成功之后的token保存到客户端的sessionStorage中
           //  1.1 项目中除了登录之外的其他api接口，必须在登陆之后才能访问
           //  1.2 token只应当在当前网站打开期间生效，所以将token保存在sessionStorage中
-          console.log(res)
           window.sessionStorage.setItem("token", res.data.token)
           //2. 通过编程式导航跳转到后台主页，路由地址是'/home'
           this.$router.push("/home")
