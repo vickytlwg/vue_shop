@@ -16,9 +16,32 @@
                       style="width: 100%">
                 <el-table-column type="expand">
                     <template slot-scope="scope">
-                        <el-row v-for="(item1,i1) in scope.row.children" :key="item1.id">
-                            <el-col :span="5">{{item1.authName}}</el-col>
-                            <el-col :span="19"></el-col>
+                        <el-row :class="['bdbottom',i1===0?'bdtop':'','vcenter']"
+                                v-for="(item1,i1) in scope.row.children"
+                                :key="item1.id">
+                            <el-col :span="5">
+                                <el-tag type="primary" closable @close="removeRightById(scope.row,item1.id)">
+                                    {{item1.authName}}
+                                </el-tag>
+                                <i class="el-icon-caret-right"></i>
+                            </el-col>
+                            <el-col :span="19">
+                                <el-row :class="[i2===0?'':'bdtop','vcenter']" v-for="(item2,i2) in item1.children"
+                                        :key="item2.id">
+                                    <el-col :span="6">
+                                        <el-tag type="success" closable @close="removeRightById(scope.row,item2.id)">
+                                            {{item2.authName}}
+                                        </el-tag>
+                                        <i class="el-icon-caret-right"></i>
+                                    </el-col>
+                                    <el-col :span="18">
+                                        <el-tag v-for="(item3,i3) in item2.children" :key="item3.id" type="warning"
+                                                closable @close="removeRightById(scope.row,item3.id)">
+                                            {{item3.authName}}
+                                        </el-tag>
+                                    </el-col>
+                                </el-row>
+                            </el-col>
                         </el-row>
                     </template>
                 </el-table-column>
@@ -40,7 +63,8 @@
                         <el-button type="danger" icon="el-icon-delete" size="mini" circle
                                    @click="deleteConfirm(scope.row)"></el-button>
                         <el-tooltip class="item" effect="dark" content="分配权限" placement="top-end" :enterable="false">
-                            <el-button type="warning" icon="el-icon-setting" size="mini" circle></el-button>
+                            <el-button type="warning" icon="el-icon-setting" size="mini" circle
+                                       @click="showSetRightDialog(scope.row)"></el-button>
                         </el-tooltip>
                     </template>
                 </el-table-column>
@@ -80,6 +104,17 @@
                 <el-button type="primary" @click="updateRole">确 定</el-button>
             </span>
         </el-dialog>
+        <el-dialog
+                title="分配权限"
+                :visible.sync="setRightDialogVisible"
+                width="50%" @close="setRightDialogClosed">
+            <el-tree :data="rightsList" :props="treeProps" node-key="id" show-checkbox default-expand-all
+                     :default-checked-keys="defKeys"></el-tree>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="setRightDialogVisible = false">取 消</el-button>
+                <el-button type="primary">确 定</el-button>
+            </span>
+        </el-dialog>
     </div>
 </template>
 
@@ -103,6 +138,13 @@
                         {required: true, message: "请输入角色名称", trigger: "blur"},
                     ]
                 },
+                setRightDialogVisible: false,
+                rightsList: [],
+                treeProps: {
+                    label: 'authName',
+                    children: 'children'
+                },
+                defKeys: []
             }
         },
         created() {
@@ -152,7 +194,7 @@
                     const {data: res} = await this.$http.put(`roles/${this.updateForm.roleId}`, this.updateForm)
                     if (res.meta.status !== 200) {
                         this.$message.error("修改用户失败!")
-                    }else{
+                    } else {
                         this.$message.success("修改用户成功!")
                         this.updateDialogVisible = false
                         this.getRoleList()
@@ -186,11 +228,64 @@
                         });
                     });
                 }
+            },
+            //根据id删除对应的权限
+            async removeRightById(role, rightId) {
+                const confrimResult = await this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).catch(err => err)
+                if (confrimResult !== 'confirm') {
+                    return this.$message.info('取消了删除!')
+                }
+                const {data: res} = await this.$http.delete(`roles/${role.id}/rights/${rightId}`)
+                if (res.meta.status !== 200) {
+                    return this.$message.error('删除失败!')
+                }
+                //this.$message.success('删除成功!')
+                role.children = res.data
+            },
+            async showSetRightDialog(role) {
+                const {data: res} = await this.$http.get('rights/tree')
+                if (res.meta.status !== 200) {
+                    return this.$message.error('获取权限失败!')
+                }
+                this.rightsList = res.data
+                this.getLeafKeys(role,this.defKeys)
+                this.setRightDialogVisible = true
+            },
+            setRightDialogClosed() {
+                this.defKeys=[]
+            },
+            //通过递归的形式获取三级节点id
+            getLeafKeys(node, arr) {
+                if (!node.children) {
+                    return arr.push(node.id)
+                }
+                node.children.forEach(item => {
+                    this.getLeafKeys(item, arr)
+                })
             }
         }
     }
 </script>
 
-<style scoped>
+<style scoped lang="less">
+    .el-tag {
+        margin: 7px;
+    }
 
+    .bdtop {
+        border-top: 1px solid #eee;
+    }
+
+    .bdbottom {
+        border-bottom: 1px solid #eee;
+    }
+
+    .vcenter {
+        display: flex;
+        align-items: center;
+    }
 </style>
