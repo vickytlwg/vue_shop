@@ -10,40 +10,28 @@
         <el-card class="box-card">
             <el-row :gutter="20">
                 <el-col :span="4">
-                    <el-button type="primary" @click="addDialogVisible=true">添加用户</el-button>
+                    <el-button type="primary" @click="showAddDialog()">添加用户</el-button>
                 </el-col>
             </el-row>
-            <el-table border stripe
-                      :data="CateList"
-                      style="width: 100%">
-                <el-table-column type="index" label="#">
-                </el-table-column>
-                <el-table-column
-                        prop="cat_name"
-                        label="姓名">
-                </el-table-column>
-                <el-table-column
-                        prop="cat_level"
-                        label="排序">
-                </el-table-column>
-                <el-table-column
-                        label="是否有效">
-                    <template slot-scope="scope">
-                        <el-switch
-                                v-model="scope.row.mg_state" @change="userStateChange(scope.row)">
-                        </el-switch>
-                    </template>
-                </el-table-column>
-                <el-table-column width="180"
-                                 label="操作">
-                    <template slot-scope="scope">
-                        <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)"
-                                   circle></el-button>
-                        <el-button type="danger" icon="el-icon-delete" size="mini" circle
-                                   @click="deleteConfirm(scope.row)"></el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <tree-table class="treeTable" :data="CateList" :columns="columns" :selection-type="false"
+                        :expand-type="false"
+                        :show-index="true" index-text="#" border :show-row-hover="false">
+                <template slot="isok" slot-scope="scope">
+                    <i class="el-icon-success" v-if="scope.row.cat_deleted===false" style="color:lightgreen"></i>
+                    <i class="el-icon-error" v-else style="color:red"></i>
+                </template>
+                <template slot="order" slot-scope="scope">
+                    <el-tag v-if="scope.row.cat_level===0" size="mini">一级</el-tag>
+                    <el-tag type="success" size="mini" v-else-if="scope.row.cat_level===1">二级</el-tag>
+                    <el-tag v-else type="warning" size="mini">三级</el-tag>
+                </template>
+                <template slot-scope="scope" slot="opt">
+                    <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)"
+                               circle></el-button>
+                    <el-button type="danger" icon="el-icon-delete" size="mini" circle
+                               @click="deleteConfirm(scope.row)"></el-button>
+                </template>
+            </tree-table>
             <el-pagination
                     @size-change="handleSizeChange"
                     @current-change="handleCurrentChange"
@@ -55,21 +43,21 @@
             </el-pagination>
         </el-card>
         <el-dialog
-                title="添加用户"
+                title="添加分类"
                 :visible.sync="addDialogVisible"
                 width="30%" @close="addDialogClosed">
-            <el-form :model="addForm" :rules="addFormRules" ref="addFormRef" label-width="70px">
-                <el-form-item label="用户名" prop="username">
-                    <el-input v-model="addForm.username"></el-input>
+            <el-form :model="addForm" :rules="addFormRules" ref="addFormRef" label-width="80px">
+                <el-form-item label="分类名称" prop="cat_name">
+                    <el-input v-model="addForm.cat_name"></el-input>
                 </el-form-item>
-                <el-form-item label="密码" prop="password">
-                    <el-input v-model="addForm.password"></el-input>
-                </el-form-item>
-                <el-form-item label="邮箱" prop="email">
-                    <el-input v-model="addForm.email"></el-input>
-                </el-form-item>
-                <el-form-item label="手机" prop="mobile">
-                    <el-input v-model="addForm.mobile"></el-input>
+                <el-form-item label="父级分类" prop="password">
+                    <div class="block">
+                        <el-cascader
+                                v-model="selectKeys"
+                                :options="parentCateList"
+                                :props="cascaderProps"
+                                @change="parentCateChange" clearable></el-cascader>
+                    </div>
                 </el-form-item>
             </el-form>
             <span slot="footer" class="dialog-footer">
@@ -78,47 +66,21 @@
   </span>
         </el-dialog>
         <el-dialog
-                title="修改用户"
+                title="修改分类"
                 :visible.sync="updateDialogVisible"
                 width="50%" @close="updateDialogClosed">
-            <el-form :model="updateForm" :rules="updateFormRules" ref="updateFormRef" label-width="70px">
-                <el-form-item label="用户名">
-                    <el-input v-model="updateForm.username" disabled></el-input>
+            <el-form :model="updateForm" :rules="updateFormRules" ref="updateFormRef" label-width="80px">
+                <el-form-item label="分类名称">
+                    <el-input v-model="updateForm.cat_name" disabled></el-input>
                 </el-form-item>
-                <el-form-item label="邮箱" prop="email">
-                    <el-input v-model="updateForm.email"></el-input>
-                </el-form-item>
-                <el-form-item label="手机" prop="mobile">
-                    <el-input v-model="updateForm.mobile"></el-input>
+                <el-form-item label="父级分类" prop="email">
+
                 </el-form-item>
             </el-form>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="updateDialogVisible = false">取 消</el-button>
                 <el-button type="primary" @click="updateUser">确 定</el-button>
             </span>
-        </el-dialog>
-        <el-dialog
-                title="分配角色"
-                :visible.sync="roleDialogVisible"
-                width="50%" @close="setRoleDialogClosed">
-            <div>
-                <p>当前的用户:{{userInfo.username}}</p>
-                <p>当前的角色:{{userInfo.role_name}}</p>
-                <p>分配新角色:
-                    <el-select v-model="selectedRoleId" filterable placeholder="请选择">
-                        <el-option
-                                v-for="item in rolesList"
-                                :key="item.id"
-                                :label="item.roleName"
-                                :value="item.id">
-                        </el-option>
-                    </el-select>
-                </p>
-            </div>
-            <span slot="footer" class="dialog-footer">
-    <el-button @click="roleDialogVisible = false">取 消</el-button>
-    <el-button type="primary" @click="saveRoleInfo">确 定</el-button>
-  </span>
         </el-dialog>
     </div>
 </template>
@@ -149,50 +111,56 @@
                     pagesize: 5
                 },
                 CateList: [],
+                columns: [{
+                    label: '分类名称',
+                    prop: 'cat_name',
+                }, {
+                    label: '是否有效',
+                    type: 'template',
+                    template: 'isok'
+                }, {
+                    label: '排序',
+                    type: 'template',
+                    template: 'order'
+                }, {
+                    label: '操作',
+                    type: 'template',
+                    template: 'opt'
+                }],
                 total: 0,
                 addDialogVisible: false,//控制新增对话框可见
                 updateDialogVisible: false,//控制修改对话框可见
                 //添加用户的表单数据
                 addForm: {
-                    username: "",
-                    password: "",
-                    email: "",
-                    mobile: ""
+                    cat_name: "",
+                    cat_level: 0,
+                    cat_pid: 0
                 },
                 //添加表单的验证规则
                 addFormRules: {
-                    username: [
+                    cat_name: [
                         {required: true, message: "请输入用户名", trigger: "blur"},
-                        {min: 3, max: 10, message: "用户名的长度在3-10个字符内"}
                     ],
-                    password: [
-                        {required: true, message: "请输入密码", trigger: "blur"},
-                        {min: 6, max: 15, message: "用户名的长度在6-15个字符内"}
-                    ],
-                    email: [
-                        {required: true, message: "请输入邮箱", trigger: "blur"},
-                        {validator: checkEmail, trigger: "blur"}
-                    ],
-                    mobile: [
-                        {required: true, message: "请输入手机", trigger: "blur"},
-                        {validator: checkMobile, trigger: "blur"}
-                    ]
                 },
                 updateForm: {},
                 updateFormRules: {
-                    email: [
-                        {required: true, message: "请输入邮箱", trigger: "blur"},
-                        {validator: checkEmail, trigger: "blur"}
-                    ],
-                    mobile: [
-                        {required: true, message: "请输入手机", trigger: "blur"},
-                        {validator: checkMobile, trigger: "blur"}
+                    cat_name: [
+                        {required: true, message: "请输入邮箱", trigger: "blur"}
                     ]
                 },
                 roleDialogVisible: false,
                 userInfo: {},
                 rolesList: [],
-                selectedRoleId:''
+                selectedRoleId: '',
+                parentCateList: [],
+                cascaderProps: {
+                    value: 'cat_id',
+                    label: 'cat_name',
+                    children: 'children',
+                    expandTrigger: 'hover',
+                    checkStrictly: true
+                },
+                selectKeys: []
             }
         },
         created() {
@@ -305,27 +273,48 @@
                 this.rolesList = res.data
                 this.roleDialogVisible = true
             },
-            async saveRoleInfo(){
-                if (!this.selectedRoleId){
+            async saveRoleInfo() {
+                if (!this.selectedRoleId) {
                     return this.$message.error('请选择角色!')
                 }
-                const {data:res}=await this.$http.put(`users/${this.userInfo.id}/role`,{rid:this.selectedRoleId})
-                if(res.meta.status!==200){
+                const {data: res} = await this.$http.put(`users/${this.userInfo.id}/role`, {rid: this.selectedRoleId})
+                if (res.meta.status !== 200) {
                     return this.$message.error('修改用户角色失败!')
                 }
                 this.$message.success('修改用户角色成功!')
                 this.getCateList()
-                this.roleDialogVisible=false
+                this.roleDialogVisible = false
             },
-            setRoleDialogClosed(){
-                this.selectedRoleId=''
-                this.userInfo={}
+            setRoleDialogClosed() {
+                this.selectedRoleId = ''
+                this.userInfo = {}
+            },
+            showAddDialog() {
+                this.getParentCateList()
+                this.addDialogVisible = true
+            },
+            async getParentCateList() {
+                const {data: res} = await this.$http.get('categories', {params: {type: 2}})
+                if (res.meta.status !== 200) {
+                    return this.$message.error('获取父级分类失败!')
+                }
+                console.log(res)
+                this.parentCateList = res.data
+            },
+            parentCateChange() {
+
             }
         }
 
     }
 </script>
 
-<style scoped>
+<style scoped lang="less">
+    .treeTable {
+        margin-top: 15px;
+    }
 
+    .el-cascader {
+        width: 100%;
+    }
 </style>
