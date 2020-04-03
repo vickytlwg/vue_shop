@@ -53,10 +53,10 @@
                 <el-form-item label="父级分类">
                     <div class="block">
                         <el-cascader size="medium"
-                                v-model="selectKeys"
-                                :options="parentCateList"
-                                :props="cascaderProps"
-                                @change="parentCateChange" clearable></el-cascader>
+                                     v-model="selectKeys"
+                                     :options="parentCateList"
+                                     :props="cascaderProps"
+                                     @change="parentCateChange" clearable></el-cascader>
                     </div>
                 </el-form-item>
             </el-form>
@@ -169,9 +169,9 @@
       //close对话框之后清空事件
       addDialogClosed() {
         this.$refs.addFormRef.resetFields()
-        this.selectKeys=[]
-        this.addForm.cat_level=0
-        this.addForm.cat_pid=0
+        this.selectKeys = []
+        this.addForm.cat_level = 0
+        this.addForm.cat_pid = 0
       },
       //添加分类
       addCate() {
@@ -199,9 +199,9 @@
       //close对话框之后清空事件
       updateDialogClosed() {
         this.$refs.updateFormRef.resetFields()
-        this.selectKeys=[]
-        this.addForm.cat_level=0
-        this.addForm.cat_pid=0
+        this.selectKeys = []
+        this.addForm.cat_level = 0
+        this.addForm.cat_pid = 0
       },
       updateCate() {
         this.$refs.updateFormRef.validate(async valid => {
@@ -258,11 +258,11 @@
       parentCateChange() {
         if (this.selectKeys.length > 0) {
           this.addForm.cat_pid = this.selectKeys[this.selectKeys.length - 1]
-          this.addForm.cat_level=this.selectKeys.length
+          this.addForm.cat_level = this.selectKeys.length
           return
-        }else {
+        } else {
           this.addForm.cat_pid = 0
-          this.addForm.cat_level=0
+          this.addForm.cat_level = 0
         }
       }
     }
