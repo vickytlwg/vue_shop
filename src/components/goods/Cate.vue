@@ -254,6 +254,7 @@
         }
         console.log(res)
         this.parentCateList = res.data
+        this.selectKeys=[3403]
       },
       parentCateChange() {
         if (this.selectKeys.length > 0) {

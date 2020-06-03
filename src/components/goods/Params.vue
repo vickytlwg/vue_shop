@@ -124,7 +124,13 @@
         activeName: "many",
         onlyTableData: [],
         manyTableData: [],
-        addDialogVisible: false
+        addDialogVisible: false,
+        addForm:[],
+        addFormRules: {
+          name: [
+            {required: true, message: "请输入分类名称", trigger: "blur"},
+          ]
+        },
       }
     },
     created() {
